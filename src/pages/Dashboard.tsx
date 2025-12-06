@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { InterviewCard } from '@/components/InterviewCard';
 import { FilterBar } from '@/components/FilterBar';
@@ -9,14 +9,26 @@ import { Button } from '@/components/ui/button';
 import { Mic, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ScoreCircle } from '@/components/ScoreCircle';
+import { getSavedInterviews } from '@/utils/interviewStorage';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [sortBy, setSortBy] = useState<SortOption>('date');
   const [filters, setFilters] = useState<FilterOption>({});
+  const [savedInterviews, setSavedInterviews] = useState<Interview[]>([]);
+
+  // Load saved interviews on mount
+  useEffect(() => {
+    setSavedInterviews(getSavedInterviews());
+  }, []);
+
+  // Combine mock and saved interviews
+  const allInterviews = useMemo(() => {
+    return [...savedInterviews, ...mockInterviews];
+  }, [savedInterviews]);
 
   const filteredAndSortedInterviews = useMemo(() => {
-    let result = [...mockInterviews];
+    let result = [...allInterviews];
 
     // Apply filters
     if (filters.jobType) {
@@ -46,12 +58,12 @@ export default function Dashboard() {
     });
 
     return result;
-  }, [sortBy, filters]);
+  }, [sortBy, filters, allInterviews]);
 
   const averageScore = useMemo(() => {
-    if (mockInterviews.length === 0) return 0;
-    return Math.round(mockInterviews.reduce((acc, i) => acc + i.score, 0) / mockInterviews.length);
-  }, []);
+    if (allInterviews.length === 0) return 0;
+    return Math.round(allInterviews.reduce((acc, i) => acc + i.score, 0) / allInterviews.length);
+  }, [allInterviews]);
 
   const handleCardClick = (interview: Interview) => {
     navigate(`/interview/${interview.id}`);
@@ -68,7 +80,7 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Total Interviews</p>
-                <p className="font-display text-3xl font-bold text-foreground">{mockInterviews.length}</p>
+                <p className="font-display text-3xl font-bold text-foreground">{allInterviews.length}</p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
                 <Mic className="w-6 h-6 text-primary" />

@@ -18,18 +18,19 @@ serve(async (req) => {
       throw new Error('OPENAI_API_KEY is not set');
     }
 
-    const { jobType, experienceLevel, company } = await req.json();
+    const { jobType, experienceLevel, company, questionCount = 5 } = await req.json();
 
     const systemPrompt = `You are an expert AI interviewer conducting a mock interview. 
 Your role is to help the candidate practice for a ${jobType} position at the ${experienceLevel} level${company ? ` at ${company}` : ''}.
 
 Guidelines:
 - Start by introducing yourself and explaining how the interview will proceed
-- Ask relevant technical and behavioral questions one at a time
+- Ask exactly ${questionCount} questions total (mix of technical and behavioral as appropriate)
+- Ask relevant questions one at a time
 - Listen carefully to responses and provide brief, encouraging feedback
 - Ask follow-up questions when appropriate
 - Be professional but friendly
-- After 5-7 questions, wrap up the interview and provide a brief summary of their performance
+- After all ${questionCount} questions, wrap up the interview and provide a brief summary of their performance
 - Speak naturally and conversationally
 
 Begin by greeting the candidate and asking them to introduce themselves.`;

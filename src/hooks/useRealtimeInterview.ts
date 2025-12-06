@@ -1,11 +1,14 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { RealtimeChat, TranscriptEntry } from '@/utils/RealtimeAudio';
 import { useToast } from '@/hooks/use-toast';
+import { generateInterviewFromSession, saveInterview } from '@/utils/interviewStorage';
+import { Interview } from '@/types/interview';
 
 interface InterviewSettings {
   jobType: string;
   experienceLevel: string;
   company: string;
+  questionCount: number;
 }
 
 export function useRealtimeInterview() {
@@ -15,7 +18,10 @@ export function useRealtimeInterview() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [transcripts, setTranscripts] = useState<TranscriptEntry[]>([]);
+  const [savedInterview, setSavedInterview] = useState<Interview | null>(null);
   const chatRef = useRef<RealtimeChat | null>(null);
+  const startTimeRef = useRef<Date | null>(null);
+  const settingsRef = useRef<InterviewSettings | null>(null);
 
   const handleMessage = useCallback((event: any) => {
     switch (event.type) {
@@ -39,7 +45,6 @@ export function useRealtimeInterview() {
 
   const handleTranscriptUpdate = useCallback((newTranscripts: TranscriptEntry[]) => {
     setTranscripts(newTranscripts);
-    // Store in localStorage for persistence
     localStorage.setItem('interview_transcripts', JSON.stringify(newTranscripts));
   }, []);
 
@@ -54,10 +59,14 @@ export function useRealtimeInterview() {
     }
 
     setIsConnecting(true);
+    setSavedInterview(null);
     
     try {
       chatRef.current = new RealtimeChat(handleMessage, handleTranscriptUpdate);
-      await chatRef.current.init(settings.jobType, settings.experienceLevel, settings.company);
+      await chatRef.current.init(settings.jobType, settings.experienceLevel, settings.company, settings.questionCount);
+      
+      startTimeRef.current = new Date();
+      settingsRef.current = settings;
       
       setIsConnected(true);
       setIsListening(true);
@@ -89,7 +98,25 @@ export function useRealtimeInterview() {
     setIsConnected(false);
     setIsSpeaking(false);
     setIsListening(false);
-  }, []);
+
+    // Save the interview session
+    if (startTimeRef.current && settingsRef.current && transcripts.length > 0) {
+      const interview = generateInterviewFromSession(
+        settingsRef.current,
+        transcripts,
+        startTimeRef.current
+      );
+      saveInterview(interview);
+      setSavedInterview(interview);
+      
+      toast({
+        title: "Interview Saved",
+        description: `Your practice session has been saved with a score of ${interview.score}/100`,
+      });
+    }
+    
+    startTimeRef.current = null;
+  }, [transcripts, toast]);
 
   useEffect(() => {
     return () => {
@@ -103,6 +130,7 @@ export function useRealtimeInterview() {
     isSpeaking,
     isListening,
     transcripts,
+    savedInterview,
     connect,
     disconnect,
   };
