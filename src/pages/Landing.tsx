@@ -79,7 +79,7 @@ export default function Landing() {
 
             <h1 className="font-display text-5xl lg:text-7xl font-bold tracking-tight text-foreground mb-6 animate-slide-up">
               Master Every
-              <span className="block gradient-hero bg-clip-text rounded">Interview</span>
+              <span className="block gradient-hero bg-clip-text rounded-md">Interview</span>
             </h1>
 
             <p
