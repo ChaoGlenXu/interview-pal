@@ -1,19 +1,27 @@
 import { useState } from 'react';
 import { Header } from '@/components/Header';
 import { VoiceInterface } from '@/components/VoiceInterface';
+import { AIAvatar } from '@/components/AIAvatar';
+import { TranscriptPanel } from '@/components/TranscriptPanel';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { JOB_TYPES, EXPERIENCE_LEVELS } from '@/types/interview';
-import { Settings, Sparkles } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Settings, Sparkles, Loader2 } from 'lucide-react';
+import { useRealtimeInterview } from '@/hooks/useRealtimeInterview';
 
 export default function Practice() {
-  const { toast } = useToast();
-  const [isConnected, setIsConnected] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [isListening, setIsListening] = useState(false);
+  const {
+    isConnected,
+    isConnecting,
+    isSpeaking,
+    isListening,
+    transcripts,
+    connect,
+    disconnect,
+  } = useRealtimeInterview();
+
   const [showSettings, setShowSettings] = useState(true);
   
   // Interview settings
@@ -21,46 +29,16 @@ export default function Practice() {
   const [experienceLevel, setExperienceLevel] = useState<string>('');
   const [company, setCompany] = useState<string>('');
 
-  const handleConnect = () => {
-    if (!jobType || !experienceLevel) {
-      toast({
-        title: "Please configure your interview",
-        description: "Select a job type and experience level to start",
-        variant: "destructive",
-      });
-      return;
+  const handleConnect = async () => {
+    const success = await connect({ jobType, experienceLevel, company });
+    if (success) {
+      setShowSettings(false);
     }
-
-    toast({
-      title: "Voice agent coming soon!",
-      description: "The AI voice interview feature will be available once connected to OpenAI's Realtime API.",
-    });
-    
-    // Simulate connection for demo
-    setIsConnected(true);
-    setShowSettings(false);
-    setIsListening(true);
-    
-    // Simulate AI speaking after a delay
-    setTimeout(() => {
-      setIsListening(false);
-      setIsSpeaking(true);
-      setTimeout(() => {
-        setIsSpeaking(false);
-        setIsListening(true);
-      }, 3000);
-    }, 1000);
   };
 
   const handleDisconnect = () => {
-    setIsConnected(false);
-    setIsSpeaking(false);
-    setIsListening(false);
+    disconnect();
     setShowSettings(true);
-  };
-
-  const handleToggleMic = () => {
-    setIsListening(!isListening);
   };
 
   return (
@@ -68,7 +46,7 @@ export default function Practice() {
       <Header />
       
       <main className="container py-8">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           {/* Title */}
           <div className="text-center mb-8 animate-slide-up">
             <h1 className="font-display text-3xl font-bold text-foreground mb-2">
@@ -144,20 +122,62 @@ export default function Practice() {
             </div>
           )}
 
-          {/* Voice Interface */}
-          <div className="bg-card rounded-2xl border border-border/50 shadow-sm p-12 animate-scale-in" style={{ animationDelay: '0.1s' }}>
-            <VoiceInterface
-              isConnected={isConnected}
-              isSpeaking={isSpeaking}
-              isListening={isListening}
-              onConnect={handleConnect}
-              onDisconnect={handleDisconnect}
-              onToggleMic={handleToggleMic}
+          {/* Main Interview Area */}
+          <div className="grid lg:grid-cols-2 gap-8">
+            {/* AI Avatar and Voice Controls */}
+            <div className="bg-card rounded-2xl border border-border/50 shadow-sm p-8 animate-scale-in flex flex-col items-center" style={{ animationDelay: '0.1s' }}>
+              {/* AI Avatar */}
+              <AIAvatar
+                isSpeaking={isSpeaking}
+                isListening={isListening}
+                isConnected={isConnected}
+                className="mb-8"
+              />
+
+              {/* Connection Button */}
+              <div className="flex flex-col items-center gap-4">
+                {isConnecting ? (
+                  <Button variant="hero" size="lg" disabled className="gap-2">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Connecting...
+                  </Button>
+                ) : isConnected ? (
+                  <Button
+                    variant="destructive"
+                    size="lg"
+                    onClick={handleDisconnect}
+                    className="gap-2"
+                  >
+                    End Interview
+                  </Button>
+                ) : (
+                  <Button
+                    variant="hero"
+                    size="lg"
+                    onClick={handleConnect}
+                    className="gap-2"
+                  >
+                    Start Interview
+                  </Button>
+                )}
+
+                {!isConnected && !isConnecting && (
+                  <p className="text-sm text-muted-foreground text-center max-w-sm">
+                    Click to start your mock interview with our AI interviewer
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Transcript Panel */}
+            <TranscriptPanel 
+              transcripts={transcripts}
+              className="animate-scale-in"
             />
           </div>
 
           {/* Tips */}
-          {!isConnected && (
+          {!isConnected && !isConnecting && (
             <div className="mt-8 text-center text-sm text-muted-foreground animate-fade-in" style={{ animationDelay: '0.3s' }}>
               <p className="font-medium mb-2">Tips for a great practice session:</p>
               <ul className="space-y-1">
