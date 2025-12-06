@@ -4,6 +4,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Upload, FileText, X, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import * as pdfjsLib from 'pdfjs-dist';
+
+// Set the worker source for PDF.js
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js`;
 
 interface ResumeUploadProps {
   onResumeText: (text: string) => void;
@@ -11,6 +15,23 @@ interface ResumeUploadProps {
   className?: string;
   label?: string;
   compact?: boolean;
+}
+
+async function extractTextFromPDF(file: File): Promise<string> {
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  let fullText = '';
+  
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const textContent = await page.getTextContent();
+    const pageText = textContent.items
+      .map((item: any) => item.str)
+      .join(' ');
+    fullText += pageText + '\n\n';
+  }
+  
+  return fullText.trim();
 }
 
 export function ResumeUpload({ 
@@ -23,23 +44,34 @@ export function ResumeUpload({
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleFile = useCallback(async (file: File) => {
     setIsProcessing(true);
     setFileName(file.name);
+    setError(null);
     
     try {
-      // For text files, read directly
-      if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
-        const text = await file.text();
-        onResumeText(text);
+      let text = '';
+      
+      if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+        // Extract text from PDF
+        text = await extractTextFromPDF(file);
+        if (!text.trim()) {
+          setError('Could not extract text from PDF. Try pasting your resume text instead.');
+        }
+      } else if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
+        // Read plain text
+        text = await file.text();
       } else {
-        // For other files, read as text (basic support)
-        const text = await file.text();
-        onResumeText(text);
+        // Try to read as text for other formats
+        text = await file.text();
       }
-    } catch (error) {
-      console.error('Error reading file:', error);
+      
+      onResumeText(text);
+    } catch (err) {
+      console.error('Error reading file:', err);
+      setError('Failed to read file. Try pasting your resume text instead.');
     } finally {
       setIsProcessing(false);
     }
@@ -74,6 +106,7 @@ export function ResumeUpload({
   const clearResume = () => {
     onResumeText('');
     setFileName(null);
+    setError(null);
   };
 
   if (compact) {
@@ -145,7 +178,7 @@ export function ResumeUpload({
               Drag & drop your resume here, or click to browse
             </p>
             <p className="text-xs text-muted-foreground">
-              Supports .txt, .pdf, .doc, .docx (text extraction for non-txt files is basic)
+              Supports PDF, TXT, DOC, DOCX files
             </p>
             <input
               type="file"
@@ -163,6 +196,9 @@ export function ResumeUpload({
               />
             </Button>
           </>
+        )}
+        {error && (
+          <p className="text-sm text-destructive mt-2">{error}</p>
         )}
       </div>
 
