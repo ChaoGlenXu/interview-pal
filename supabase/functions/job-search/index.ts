@@ -74,8 +74,6 @@ serve(async (req) => {
         
         result = await callTool("search_engine", {
           query: jobSearchQuery,
-          engine: "google",
-          count: filters?.limit || 20,
         });
         break;
         
@@ -83,8 +81,6 @@ serve(async (req) => {
         // Search for company information
         result = await callTool("search_engine", {
           query: `${query} company reviews ratings glassdoor`,
-          engine: "google",
-          count: 10,
         });
         break;
         
@@ -96,8 +92,6 @@ serve(async (req) => {
         
         result = await callTool("search_engine", {
           query: salaryQuery,
-          engine: "google",
-          count: 10,
         });
         break;
         
@@ -116,8 +110,6 @@ serve(async (req) => {
         
         result = await callTool("search_engine", {
           query: defaultQuery,
-          engine: "google",
-          count: filters?.limit || 20,
         });
     }
 
