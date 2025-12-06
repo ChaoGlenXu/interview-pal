@@ -27,10 +27,10 @@ export function saveInterview(interview: Interview): void {
 export function generateInterviewFromSession(
   settings: { jobType: string; experienceLevel: string; company: string },
   transcripts: TranscriptEntry[],
-  startTime: Date
+  startTime: Date,
+  questionCount: number
 ): Interview {
   const duration = Math.round((Date.now() - startTime.getTime()) / 60000);
-  const questionCount = transcripts.filter(t => t.role === 'assistant').length;
   
   // Generate a simple score based on user response length and count
   const userResponses = transcripts.filter(t => t.role === 'user');
