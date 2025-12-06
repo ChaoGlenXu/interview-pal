@@ -13,6 +13,7 @@ import {
   Target,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import GradientChatbot from "@/components/GradientChatbot";
 
 export default function Landing() {
   const features = [
@@ -61,7 +62,8 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero Section */}
+      {/* DigitalOcean Gradient AI Chatbot */}
+      <GradientChatbot />
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 gradient-hero opacity-5" />
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-float" />

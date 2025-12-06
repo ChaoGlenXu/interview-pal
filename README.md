@@ -34,9 +34,22 @@ InterviewAI is a modern web application that helps job seekers practice intervie
 
 - **Frontend**: React 18, TypeScript, Vite
 - **Styling**: Tailwind CSS, shadcn/ui
-- **Backend**: Supabase Edge Functions
-- **AI**: OpenAI Realtime Voice API, GPT-4
+- **Backend**: Supabase Edge Functions (via Lovable Cloud)
+- **AI Voice**: OpenAI Realtime Voice API
+- **AI Intelligence Engine**: DigitalOcean Gradient AI
 - **State Management**: TanStack Query
+
+## Architecture
+
+InterviewAI uses a dual-AI architecture:
+
+1. **OpenAI Realtime Voice API** - Handles real-time voice conversations during mock interviews
+2. **DigitalOcean Gradient AI** - Powers the Intelligence Engine for:
+   - Interview question knowledge base management
+   - Resume and job description analysis
+   - User transcript storage and improvement tracking
+   - Interview trend discovery and insights
+   - Personalized coaching recommendations
 
 ## Getting Started
 
