@@ -22,8 +22,10 @@ export function useRealtimeInterview() {
   const chatRef = useRef<RealtimeChat | null>(null);
   const startTimeRef = useRef<Date | null>(null);
   const settingsRef = useRef<InterviewSettings | null>(null);
+  const transcriptsRef = useRef<TranscriptEntry[]>([]);
 
   const handleMessage = useCallback((event: any) => {
+    console.log('handleMessage:', event.type);
     switch (event.type) {
       case 'response.audio.delta':
         setIsSpeaking(true);
@@ -44,7 +46,9 @@ export function useRealtimeInterview() {
   }, []);
 
   const handleTranscriptUpdate = useCallback((newTranscripts: TranscriptEntry[]) => {
+    console.log('Transcript update:', newTranscripts.length, 'entries');
     setTranscripts(newTranscripts);
+    transcriptsRef.current = newTranscripts;
     localStorage.setItem('interview_transcripts', JSON.stringify(newTranscripts));
   }, []);
 
@@ -67,6 +71,7 @@ export function useRealtimeInterview() {
       
       startTimeRef.current = new Date();
       settingsRef.current = settings;
+      transcriptsRef.current = [];
       
       setIsConnected(true);
       setIsListening(true);
@@ -93,17 +98,26 @@ export function useRealtimeInterview() {
   }, [handleMessage, handleTranscriptUpdate, toast]);
 
   const disconnect = useCallback(() => {
-    chatRef.current?.disconnect();
-    chatRef.current = null;
+    console.log('Disconnect called, transcripts:', transcriptsRef.current.length);
+    
+    // Disconnect the chat
+    if (chatRef.current) {
+      chatRef.current.disconnect();
+      chatRef.current = null;
+    }
+    
     setIsConnected(false);
     setIsSpeaking(false);
     setIsListening(false);
 
-    // Save the interview session
-    if (startTimeRef.current && settingsRef.current && transcripts.length > 0) {
+    // Save the interview session using ref to get latest transcripts
+    const currentTranscripts = transcriptsRef.current;
+    console.log('Saving interview with', currentTranscripts.length, 'transcripts');
+    
+    if (startTimeRef.current && settingsRef.current && currentTranscripts.length > 0) {
       const interview = generateInterviewFromSession(
         settingsRef.current,
-        transcripts,
+        currentTranscripts,
         startTimeRef.current
       );
       saveInterview(interview);
@@ -113,14 +127,22 @@ export function useRealtimeInterview() {
         title: "Interview Saved",
         description: `Your practice session has been saved with a score of ${interview.score}/100`,
       });
+    } else {
+      console.log('Not saving - missing data:', {
+        hasStartTime: !!startTimeRef.current,
+        hasSettings: !!settingsRef.current,
+        transcriptCount: currentTranscripts.length
+      });
     }
     
     startTimeRef.current = null;
-  }, [transcripts, toast]);
+  }, [toast]);
 
   useEffect(() => {
     return () => {
-      chatRef.current?.disconnect();
+      if (chatRef.current) {
+        chatRef.current.disconnect();
+      }
     };
   }, []);
 
