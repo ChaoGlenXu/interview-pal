@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { VoiceInterface } from '@/components/VoiceInterface';
 import { AIAvatar } from '@/components/AIAvatar';
@@ -8,16 +8,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { JOB_TYPES, EXPERIENCE_LEVELS } from '@/types/interview';
-import { Settings, Sparkles, Loader2 } from 'lucide-react';
+import { Settings, Sparkles, Loader2, CheckCircle } from 'lucide-react';
 import { useRealtimeInterview } from '@/hooks/useRealtimeInterview';
+import { useNavigate } from 'react-router-dom';
 
 export default function Practice() {
+  const navigate = useNavigate();
   const {
     isConnected,
     isConnecting,
     isSpeaking,
     isListening,
     transcripts,
+    savedInterview,
+    interviewComplete,
     connect,
     disconnect,
   } = useRealtimeInterview();
@@ -41,6 +45,17 @@ export default function Practice() {
     disconnect();
     setShowSettings(true);
   };
+
+  // Auto-end interview when AI finishes
+  useEffect(() => {
+    if (interviewComplete && isConnected) {
+      // Give a short delay for the AI to finish speaking
+      const timer = setTimeout(() => {
+        handleDisconnect();
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [interviewComplete, isConnected]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -158,14 +173,22 @@ export default function Practice() {
                     Connecting...
                   </Button>
                 ) : isConnected ? (
-                  <Button
-                    variant="destructive"
-                    size="lg"
-                    onClick={handleDisconnect}
-                    className="gap-2"
-                  >
-                    End Interview
-                  </Button>
+                  <div className="flex flex-col items-center gap-3">
+                    {interviewComplete && (
+                      <div className="flex items-center gap-2 text-score-good mb-2 animate-fade-in">
+                        <CheckCircle className="w-5 h-5" />
+                        <span className="font-medium">Interview Complete! Saving...</span>
+                      </div>
+                    )}
+                    <Button
+                      variant="destructive"
+                      size="lg"
+                      onClick={handleDisconnect}
+                      className="gap-2"
+                    >
+                      End Interview
+                    </Button>
+                  </div>
                 ) : (
                   <Button
                     variant="hero"
@@ -177,7 +200,18 @@ export default function Practice() {
                   </Button>
                 )}
 
-                {!isConnected && !isConnecting && (
+                {!isConnected && !isConnecting && savedInterview && (
+                  <div className="bg-score-good/10 border border-score-good/20 rounded-xl p-4 text-center animate-scale-in">
+                    <CheckCircle className="w-8 h-8 text-score-good mx-auto mb-2" />
+                    <p className="font-medium text-foreground">Interview Saved!</p>
+                    <p className="text-sm text-muted-foreground mb-3">Score: {savedInterview.score}/100</p>
+                    <Button variant="secondary" size="sm" onClick={() => navigate('/dashboard')}>
+                      View in Dashboard
+                    </Button>
+                  </div>
+                )}
+
+                {!isConnected && !isConnecting && !savedInterview && (
                   <p className="text-sm text-muted-foreground text-center max-w-sm">
                     Click to start your mock interview with our AI interviewer
                   </p>

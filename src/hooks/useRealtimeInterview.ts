@@ -19,10 +19,29 @@ export function useRealtimeInterview() {
   const [isListening, setIsListening] = useState(false);
   const [transcripts, setTranscripts] = useState<TranscriptEntry[]>([]);
   const [savedInterview, setSavedInterview] = useState<Interview | null>(null);
+  const [interviewComplete, setInterviewComplete] = useState(false);
   const chatRef = useRef<RealtimeChat | null>(null);
   const startTimeRef = useRef<Date | null>(null);
   const settingsRef = useRef<InterviewSettings | null>(null);
   const transcriptsRef = useRef<TranscriptEntry[]>([]);
+
+  // Check if AI said interview is ending
+  const checkForInterviewEnd = useCallback((text: string) => {
+    const endPhrases = [
+      'concludes our interview',
+      'end of the interview',
+      'interview is complete',
+      'wrapping up',
+      'that concludes',
+      'thank you for your time',
+      'best of luck',
+      'good luck with',
+      'interview has ended',
+      'finished with the interview'
+    ];
+    const lowerText = text.toLowerCase();
+    return endPhrases.some(phrase => lowerText.includes(phrase));
+  }, []);
 
   const handleMessage = useCallback((event: any) => {
     console.log('handleMessage:', event.type);
@@ -50,7 +69,14 @@ export function useRealtimeInterview() {
     setTranscripts(newTranscripts);
     transcriptsRef.current = newTranscripts;
     localStorage.setItem('interview_transcripts', JSON.stringify(newTranscripts));
-  }, []);
+    
+    // Check if the last AI message indicates interview end
+    const lastEntry = newTranscripts[newTranscripts.length - 1];
+    if (lastEntry?.role === 'assistant' && checkForInterviewEnd(lastEntry.text)) {
+      console.log('Interview end detected in AI response');
+      setInterviewComplete(true);
+    }
+  }, [checkForInterviewEnd]);
 
   const connect = useCallback(async (settings: InterviewSettings) => {
     if (!settings.jobType || !settings.experienceLevel) {
@@ -153,6 +179,7 @@ export function useRealtimeInterview() {
     isListening,
     transcripts,
     savedInterview,
+    interviewComplete,
     connect,
     disconnect,
   };
