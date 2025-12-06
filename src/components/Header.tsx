@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { Mic, LayoutDashboard, FileText } from 'lucide-react';
+import { Mic, LayoutDashboard, FileText, Search } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
@@ -10,6 +10,7 @@ export function Header() {
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/practice', label: 'Practice', icon: Mic },
     { path: '/resume-review', label: 'Resume', icon: FileText },
+    { path: '/job-search', label: 'Jobs', icon: Search },
   ];
 
   return (

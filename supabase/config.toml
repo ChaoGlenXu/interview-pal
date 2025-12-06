@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.gradient-ai]
 verify_jwt = false
+
+[functions.job-search]
+verify_jwt = false
