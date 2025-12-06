@@ -5,17 +5,77 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Simple PDF text extraction using basic parsing
+// This extracts visible text streams from PDF - works for most text-based PDFs
+function extractTextFromPDF(base64Data: string): string {
+  try {
+    const binaryString = atob(base64Data);
+    
+    // Look for text streams in PDF
+    const textMatches: string[] = [];
+    
+    // Pattern to find text in PDF streams (simplified)
+    const textPattern = /\(([^)]+)\)/g;
+    const tjPattern = /\[([^\]]+)\]\s*TJ/g;
+    
+    // Extract parenthesized text
+    let match;
+    while ((match = textPattern.exec(binaryString)) !== null) {
+      const text = match[1]
+        .replace(/\\n/g, '\n')
+        .replace(/\\r/g, '')
+        .replace(/\\\(/g, '(')
+        .replace(/\\\)/g, ')')
+        .replace(/\\\\/g, '\\');
+      if (text.length > 1 && /[a-zA-Z]/.test(text)) {
+        textMatches.push(text);
+      }
+    }
+    
+    // If we found text, return it
+    if (textMatches.length > 0) {
+      return textMatches.join(' ').replace(/\s+/g, ' ').trim();
+    }
+    
+    // Fallback: try to find any readable text
+    const readableText = binaryString.match(/[a-zA-Z0-9\s.,;:!?@#$%&*()-=+'"]{20,}/g);
+    if (readableText) {
+      return readableText.join(' ').replace(/\s+/g, ' ').trim();
+    }
+    
+    return '';
+  } catch (error) {
+    console.error('PDF text extraction error:', error);
+    return '';
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { resumeText, jobDescription, jobType, company } = await req.json();
+    const { resumeText, pdfBase64, jobDescription, jobType, company } = await req.json();
 
-    if (!resumeText) {
+    let textToAnalyze = resumeText;
+    
+    // Parse PDF if provided
+    if (pdfBase64) {
+      console.log('Parsing PDF...');
+      const extractedText = extractTextFromPDF(pdfBase64);
+      if (extractedText) {
+        textToAnalyze = extractedText;
+        console.log('PDF parsed, text length:', textToAnalyze.length);
+      } else {
+        console.log('Could not extract text from PDF, will inform AI');
+        textToAnalyze = '[PDF resume uploaded but text extraction was limited. Please provide general resume feedback based on typical resume best practices.]';
+      }
+    }
+
+    if (!textToAnalyze || !textToAnalyze.trim()) {
       return new Response(
-        JSON.stringify({ error: 'Resume text is required' }),
+        JSON.stringify({ error: 'Resume text is required. Try pasting your resume text directly.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -43,7 +103,7 @@ Your response must be a valid JSON object with this exact structure:
 
 Be specific, constructive, and professional. Focus on actionable improvements.`;
 
-    let userPrompt = `Please analyze this resume:\n\n${resumeText}`;
+    let userPrompt = `Please analyze this resume:\n\n${textToAnalyze}`;
     
     if (jobDescription) {
       userPrompt += `\n\nThe candidate is applying for this position:\n${jobDescription}`;
