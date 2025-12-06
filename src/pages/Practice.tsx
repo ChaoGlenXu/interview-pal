@@ -28,9 +28,10 @@ export default function Practice() {
   const [jobType, setJobType] = useState<string>('');
   const [experienceLevel, setExperienceLevel] = useState<string>('');
   const [company, setCompany] = useState<string>('');
+  const [questionCount, setQuestionCount] = useState<number>(5);
 
   const handleConnect = async () => {
-    const success = await connect({ jobType, experienceLevel, company });
+    const success = await connect({ jobType, experienceLevel, company, questionCount });
     if (success) {
       setShowSettings(false);
     }
@@ -96,14 +97,30 @@ export default function Practice() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="company">Target Company (Optional)</Label>
-                  <Input
-                    id="company"
-                    placeholder="e.g., Google, Amazon, Meta..."
-                    value={company}
-                    onChange={(e) => setCompany(e.target.value)}
-                  />
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="company">Target Company (Optional)</Label>
+                    <Input
+                      id="company"
+                      placeholder="e.g., Google, Amazon, Meta..."
+                      value={company}
+                      onChange={(e) => setCompany(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="questionCount">Number of Questions</Label>
+                    <Select value={questionCount.toString()} onValueChange={(v) => setQuestionCount(parseInt(v))}>
+                      <SelectTrigger id="questionCount">
+                        <SelectValue placeholder="Select count" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[3, 5, 7, 10].map((count) => (
+                          <SelectItem key={count} value={count.toString()}>{count} questions</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 <div className="bg-muted/50 rounded-xl p-4">
