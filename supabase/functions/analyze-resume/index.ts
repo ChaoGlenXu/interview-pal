@@ -58,22 +58,28 @@ serve(async (req) => {
   try {
     const { resumeText, pdfBase64, jobDescription, jobType, company } = await req.json();
 
-    let textToAnalyze = resumeText;
+    let textToAnalyze = resumeText || '';
     
     // Parse PDF if provided
     if (pdfBase64) {
       console.log('Parsing PDF...');
-      const extractedText = extractTextFromPDF(pdfBase64);
-      if (extractedText) {
-        textToAnalyze = extractedText;
-        console.log('PDF parsed, text length:', textToAnalyze.length);
-      } else {
-        console.log('Could not extract text from PDF, will inform AI');
-        textToAnalyze = '[PDF resume uploaded but text extraction was limited. Please provide general resume feedback based on typical resume best practices.]';
+      try {
+        const extractedText = extractTextFromPDF(pdfBase64);
+        if (extractedText && extractedText.length > 50) {
+          textToAnalyze = extractedText;
+          console.log('PDF parsed, text length:', textToAnalyze.length);
+        } else {
+          console.log('Could not extract meaningful text from PDF, will inform AI');
+          textToAnalyze = '[PDF resume uploaded but text extraction was limited. Please provide general resume feedback based on typical resume best practices.]';
+        }
+      } catch (pdfError) {
+        console.error('PDF parsing error:', pdfError);
+        textToAnalyze = '[PDF resume uploaded but could not be processed. Please provide general resume feedback based on typical resume best practices.]';
       }
     }
 
     if (!textToAnalyze || !textToAnalyze.trim()) {
+      console.log('No resume text provided, resumeText:', resumeText, 'pdfBase64 provided:', !!pdfBase64);
       return new Response(
         JSON.stringify({ error: 'Resume text is required. Try pasting your resume text directly.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
