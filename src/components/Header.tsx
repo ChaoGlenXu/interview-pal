@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { Mic, LayoutDashboard, History } from 'lucide-react';
+import { Mic, LayoutDashboard, FileText } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
@@ -9,6 +9,7 @@ export function Header() {
   const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/practice', label: 'Practice', icon: Mic },
+    { path: '/resume-review', label: 'Resume', icon: FileText },
   ];
 
   return (
