@@ -60,16 +60,16 @@ export default function Practice() {
     setShowSettings(true);
   };
 
-  // Auto-end interview when AI finishes
+  // Auto-end interview when AI finishes speaking
   useEffect(() => {
-    if (interviewComplete && isConnected) {
-      // Give a short delay for the AI to finish speaking
+    if (interviewComplete && isConnected && !isSpeaking) {
+      // Only disconnect once the AI has finished speaking
       const timer = setTimeout(() => {
         handleDisconnect();
-      }, 2000);
+      }, 1500);
       return () => clearTimeout(timer);
     }
-  }, [interviewComplete, isConnected]);
+  }, [interviewComplete, isConnected, isSpeaking]);
 
   return (
     <div className="min-h-screen bg-background">
