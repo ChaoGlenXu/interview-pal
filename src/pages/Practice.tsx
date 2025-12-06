@@ -24,6 +24,7 @@ export default function Practice() {
     transcripts,
     savedInterview,
     interviewComplete,
+    aiFinishedSpeaking,
     connect,
     disconnect,
   } = useRealtimeInterview();
@@ -60,16 +61,16 @@ export default function Practice() {
     setShowSettings(true);
   };
 
-  // Auto-end interview when AI finishes speaking
+  // Auto-end interview when AI finishes speaking after interview completion
   useEffect(() => {
-    if (interviewComplete && isConnected && !isSpeaking) {
-      // Only disconnect once the AI has finished speaking
+    if (interviewComplete && isConnected && aiFinishedSpeaking) {
+      // Wait a bit longer after AI finishes speaking to ensure all audio is played
       const timer = setTimeout(() => {
         handleDisconnect();
-      }, 1500);
+      }, 2500);
       return () => clearTimeout(timer);
     }
-  }, [interviewComplete, isConnected, isSpeaking]);
+  }, [interviewComplete, isConnected, aiFinishedSpeaking]);
 
   return (
     <div className="min-h-screen bg-background">

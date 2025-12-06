@@ -22,10 +22,12 @@ export function useRealtimeInterview() {
   const [transcripts, setTranscripts] = useState<TranscriptEntry[]>([]);
   const [savedInterview, setSavedInterview] = useState<Interview | null>(null);
   const [interviewComplete, setInterviewComplete] = useState(false);
+  const [aiFinishedSpeaking, setAiFinishedSpeaking] = useState(false);
   const chatRef = useRef<RealtimeChat | null>(null);
   const startTimeRef = useRef<Date | null>(null);
   const settingsRef = useRef<InterviewSettings | null>(null);
   const transcriptsRef = useRef<TranscriptEntry[]>([]);
+  const interviewEndDetectedRef = useRef(false);
 
   // Check if AI said interview is ending
   const checkForInterviewEnd = useCallback((text: string) => {
@@ -56,6 +58,11 @@ export function useRealtimeInterview() {
       case 'response.done':
         setIsSpeaking(false);
         setIsListening(true);
+        // If interview end was detected, mark AI as finished speaking
+        if (interviewEndDetectedRef.current) {
+          console.log('AI finished speaking after interview end detected');
+          setAiFinishedSpeaking(true);
+        }
         break;
       case 'input_audio_buffer.speech_started':
         setIsListening(true);
@@ -74,8 +81,9 @@ export function useRealtimeInterview() {
     
     // Check if the last AI message indicates interview end
     const lastEntry = newTranscripts[newTranscripts.length - 1];
-    if (lastEntry?.role === 'assistant' && checkForInterviewEnd(lastEntry.text)) {
-      console.log('Interview end detected in AI response');
+    if (lastEntry?.role === 'assistant' && checkForInterviewEnd(lastEntry.text) && !interviewEndDetectedRef.current) {
+      console.log('Interview end detected in AI response - waiting for AI to finish speaking');
+      interviewEndDetectedRef.current = true;
       setInterviewComplete(true);
     }
   }, [checkForInterviewEnd]);
@@ -190,6 +198,7 @@ export function useRealtimeInterview() {
     transcripts,
     savedInterview,
     interviewComplete,
+    aiFinishedSpeaking,
     connect,
     disconnect,
   };
