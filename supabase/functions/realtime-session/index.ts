@@ -18,9 +18,9 @@ serve(async (req) => {
       throw new Error('OPENAI_API_KEY is not set');
     }
 
-    const { jobType, experienceLevel, company, questionCount = 5 } = await req.json();
+    const { jobType, experienceLevel, company, questionCount = 5, resumeText, jobDescription } = await req.json();
 
-    const systemPrompt = `You are an expert AI interviewer conducting a mock interview. 
+    let systemPrompt = `You are an expert AI interviewer conducting a mock interview. 
 Your role is to help the candidate practice for a ${jobType} position at the ${experienceLevel} level${company ? ` at ${company}` : ''}.
 
 Guidelines:
@@ -31,9 +31,17 @@ Guidelines:
 - Ask follow-up questions when appropriate
 - Be professional but friendly
 - After all ${questionCount} questions, wrap up the interview and provide a brief summary of their performance
-- Speak naturally and conversationally
+- Speak naturally and conversationally`;
 
-Begin by greeting the candidate and asking them to introduce themselves.`;
+    if (resumeText) {
+      systemPrompt += `\n\nThe candidate has provided their resume for context:\n${resumeText.substring(0, 2000)}`;
+    }
+
+    if (jobDescription) {
+      systemPrompt += `\n\nThe job description they're applying for:\n${jobDescription.substring(0, 2000)}`;
+    }
+
+    systemPrompt += `\n\nBegin by greeting the candidate and asking them to introduce themselves.`;
 
     console.log("Creating session with prompt:", systemPrompt);
 

@@ -101,12 +101,19 @@ export class RealtimeChat {
     this.audioEl.autoplay = true;
   }
 
-  async init(jobType: string, experienceLevel: string, company: string, questionCount: number = 5) {
+  async init(
+    jobType: string, 
+    experienceLevel: string, 
+    company: string, 
+    questionCount: number = 5,
+    resumeText?: string,
+    jobDescription?: string
+  ) {
     try {
       console.log("Requesting ephemeral token from edge function...");
       
       const { data, error } = await supabase.functions.invoke("realtime-session", {
-        body: { jobType, experienceLevel, company, questionCount }
+        body: { jobType, experienceLevel, company, questionCount, resumeText, jobDescription }
       });
 
       if (error) {

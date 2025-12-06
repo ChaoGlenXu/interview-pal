@@ -9,6 +9,8 @@ interface InterviewSettings {
   experienceLevel: string;
   company: string;
   questionCount: number;
+  resumeText?: string;
+  jobDescription?: string;
 }
 
 export function useRealtimeInterview() {
@@ -93,7 +95,14 @@ export function useRealtimeInterview() {
     
     try {
       chatRef.current = new RealtimeChat(handleMessage, handleTranscriptUpdate);
-      await chatRef.current.init(settings.jobType, settings.experienceLevel, settings.company, settings.questionCount);
+      await chatRef.current.init(
+        settings.jobType, 
+        settings.experienceLevel, 
+        settings.company, 
+        settings.questionCount,
+        settings.resumeText,
+        settings.jobDescription
+      );
       
       startTimeRef.current = new Date();
       settingsRef.current = settings;
