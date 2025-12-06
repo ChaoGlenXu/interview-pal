@@ -8,6 +8,7 @@ import Dashboard from "./pages/Dashboard";
 import Practice from "./pages/Practice";
 import InterviewDetails from "./pages/InterviewDetails";
 import ResumeReview from "./pages/ResumeReview";
+import JobSearch from "./pages/JobSearch";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/practice" element={<Practice />} />
           <Route path="/interview/:id" element={<InterviewDetails />} />
           <Route path="/resume-review" element={<ResumeReview />} />
+          <Route path="/job-search" element={<JobSearch />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
