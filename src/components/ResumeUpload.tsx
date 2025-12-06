@@ -4,38 +4,19 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Upload, FileText, X, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import * as pdfjsLib from 'pdfjs-dist';
-
-// Set the worker source for PDF.js
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js`;
 
 interface ResumeUploadProps {
   onResumeText: (text: string) => void;
+  onFileData?: (data: string, fileName: string) => void;
   resumeText: string;
   className?: string;
   label?: string;
   compact?: boolean;
 }
 
-async function extractTextFromPDF(file: File): Promise<string> {
-  const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-  let fullText = '';
-  
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const textContent = await page.getTextContent();
-    const pageText = textContent.items
-      .map((item: any) => item.str)
-      .join(' ');
-    fullText += pageText + '\n\n';
-  }
-  
-  return fullText.trim();
-}
-
 export function ResumeUpload({ 
-  onResumeText, 
+  onResumeText,
+  onFileData,
   resumeText, 
   className,
   label = "Upload Resume",
@@ -52,30 +33,29 @@ export function ResumeUpload({
     setError(null);
     
     try {
-      let text = '';
-      
       if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
-        // Extract text from PDF
-        text = await extractTextFromPDF(file);
-        if (!text.trim()) {
-          setError('Could not extract text from PDF. Try pasting your resume text instead.');
-        }
+        // Convert PDF to base64 for backend processing
+        const arrayBuffer = await file.arrayBuffer();
+        const base64 = btoa(
+          new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+        );
+        onFileData?.(base64, file.name);
+        onResumeText(`[PDF file uploaded: ${file.name}]`);
       } else if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
-        // Read plain text
-        text = await file.text();
+        const text = await file.text();
+        onResumeText(text);
       } else {
         // Try to read as text for other formats
-        text = await file.text();
+        const text = await file.text();
+        onResumeText(text);
       }
-      
-      onResumeText(text);
     } catch (err) {
       console.error('Error reading file:', err);
       setError('Failed to read file. Try pasting your resume text instead.');
     } finally {
       setIsProcessing(false);
     }
-  }, [onResumeText]);
+  }, [onResumeText, onFileData]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();

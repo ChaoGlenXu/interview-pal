@@ -28,14 +28,27 @@ interface ResumeAnalysis {
 export default function ResumeReview() {
   const { toast } = useToast();
   const [resumeText, setResumeText] = useState('');
+  const [pdfData, setPdfData] = useState<{ base64: string; fileName: string } | null>(null);
   const [jobDescription, setJobDescription] = useState('');
   const [jobType, setJobType] = useState('');
   const [company, setCompany] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<ResumeAnalysis | null>(null);
 
+  const handleFileData = (base64: string, fileName: string) => {
+    setPdfData({ base64, fileName });
+  };
+
+  const handleResumeText = (text: string) => {
+    setResumeText(text);
+    // Clear PDF data if user pastes text directly
+    if (!text.startsWith('[PDF file uploaded:')) {
+      setPdfData(null);
+    }
+  };
+
   const handleAnalyze = async () => {
-    if (!resumeText.trim()) {
+    if (!resumeText.trim() && !pdfData) {
       toast({
         title: 'Resume required',
         description: 'Please upload or paste your resume text.',
@@ -49,7 +62,13 @@ export default function ResumeReview() {
 
     try {
       const { data, error } = await supabase.functions.invoke('analyze-resume', {
-        body: { resumeText, jobDescription, jobType, company },
+        body: { 
+          resumeText: pdfData ? null : resumeText, 
+          pdfBase64: pdfData?.base64,
+          jobDescription, 
+          jobType, 
+          company 
+        },
       });
 
       if (error) throw error;
@@ -98,7 +117,8 @@ export default function ResumeReview() {
               <div className="bg-card rounded-2xl border border-border/50 shadow-sm p-6 animate-scale-in">
                 <ResumeUpload
                   resumeText={resumeText}
-                  onResumeText={setResumeText}
+                  onResumeText={handleResumeText}
+                  onFileData={handleFileData}
                   label="Your Resume"
                 />
               </div>
@@ -151,7 +171,7 @@ export default function ResumeReview() {
 
               <Button
                 onClick={handleAnalyze}
-                disabled={isAnalyzing || !resumeText.trim()}
+                disabled={isAnalyzing || (!resumeText.trim() && !pdfData)}
                 className="w-full gap-2"
                 size="lg"
               >
