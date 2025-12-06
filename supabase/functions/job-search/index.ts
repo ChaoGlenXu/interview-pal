@@ -7,6 +7,43 @@ const corsHeaders = {
 
 const TADATA_SERVER_URL = "https://brightdata-rkc5.mcp.tadata.com";
 
+// Helper to make JSON-RPC calls to MCP server
+async function mcpCall(method: string, params: Record<string, unknown> = {}) {
+  const requestBody = {
+    jsonrpc: "2.0",
+    id: Date.now(),
+    method,
+    params,
+  };
+  
+  console.log(`MCP call: ${method}`, JSON.stringify(params));
+  
+  const response = await fetch(TADATA_SERVER_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(requestBody),
+  });
+  
+  const result = await response.json();
+  console.log(`MCP response:`, JSON.stringify(result));
+  
+  if (result.error) {
+    throw new Error(result.error.message || JSON.stringify(result.error));
+  }
+  
+  return result.result;
+}
+
+// Call an MCP tool by name
+async function callTool(toolName: string, args: Record<string, unknown>) {
+  return await mcpCall("tools/call", {
+    name: toolName,
+    arguments: args,
+  });
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -18,87 +55,73 @@ serve(async (req) => {
     
     console.log(`Job search request: action=${action}, query=${query}, location=${location}`);
     
-    let endpoint = "";
-    let requestBody: Record<string, unknown> = {};
+    let result;
 
     switch (action) {
+      case "list_tools":
+        // List available MCP tools
+        result = await mcpCall("tools/list", {});
+        break;
+        
       case "search_jobs":
-        endpoint = "/search/jobs";
-        requestBody = {
-          query: query || "",
-          location: location || "",
-          limit: filters?.limit || 20,
-          page: filters?.page || 1,
-        };
+        // Use search_engine tool to search for jobs
+        const jobSearchQuery = location 
+          ? `${query} jobs in ${location}` 
+          : `${query} jobs`;
+        
+        result = await callTool("search_engine", {
+          query: jobSearchQuery,
+          engine: "google",
+          count: filters?.limit || 20,
+        });
         break;
         
       case "get_company":
-        endpoint = "/company";
-        requestBody = {
-          company_name: query,
-          include_reviews: filters?.includeReviews || true,
-          include_ratings: filters?.includeRatings || true,
-        };
+        // Search for company information
+        result = await callTool("search_engine", {
+          query: `${query} company reviews ratings glassdoor`,
+          engine: "google",
+          count: 10,
+        });
         break;
         
       case "get_salaries":
-        endpoint = "/salaries";
-        requestBody = {
-          job_title: query,
-          location: location || "",
-          experience_level: filters?.experienceLevel || "",
-        };
+        // Search for salary information
+        const salaryQuery = location 
+          ? `${query} salary in ${location}` 
+          : `${query} salary`;
+        
+        result = await callTool("search_engine", {
+          query: salaryQuery,
+          engine: "google",
+          count: 10,
+        });
         break;
         
-      case "get_job_details":
-        endpoint = "/job";
-        requestBody = {
-          job_url: query,
-        };
+      case "scrape_url":
+        // Scrape a specific URL for job details
+        result = await callTool("scrape_as_markdown", {
+          url: query,
+        });
         break;
         
       default:
-        // Default to job search
-        endpoint = "/search/jobs";
-        requestBody = {
-          query: query || "",
-          location: location || "",
-          limit: 20,
-        };
+        // Default: try search_engine for job search
+        const defaultQuery = location 
+          ? `${query} in ${location}` 
+          : query;
+        
+        result = await callTool("search_engine", {
+          query: defaultQuery,
+          engine: "google",
+          count: filters?.limit || 20,
+        });
     }
 
-    console.log(`Calling Tadata API: ${TADATA_SERVER_URL}${endpoint}`);
-    console.log(`Request body:`, JSON.stringify(requestBody));
-
-    const response = await fetch(`${TADATA_SERVER_URL}${endpoint}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Tadata API error: ${response.status} - ${errorText}`);
-      
-      return new Response(
-        JSON.stringify({ 
-          error: `Tadata API error: ${response.status}`,
-          details: errorText 
-        }),
-        { 
-          status: response.status,
-          headers: { ...corsHeaders, "Content-Type": "application/json" }
-        }
-      );
-    }
-
-    const data = await response.json();
-    console.log(`Tadata API response received successfully`);
+    console.log(`Job search completed successfully`);
 
     return new Response(
-      JSON.stringify({ success: true, data }),
+      JSON.stringify({ success: true, data: result }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
