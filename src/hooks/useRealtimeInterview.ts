@@ -144,7 +144,8 @@ export function useRealtimeInterview() {
       const interview = generateInterviewFromSession(
         settingsRef.current,
         currentTranscripts,
-        startTimeRef.current
+        startTimeRef.current,
+        settingsRef.current.questionCount
       );
       saveInterview(interview);
       setSavedInterview(interview);
