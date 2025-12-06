@@ -23,6 +23,7 @@ async function mcpCall(method: string, params: Record<string, unknown> = {}) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      "Accept": "application/json, text/event-stream",
       "Authorization": `Bearer ${TADATA_API_KEY}`,
     },
     body: JSON.stringify(requestBody),
