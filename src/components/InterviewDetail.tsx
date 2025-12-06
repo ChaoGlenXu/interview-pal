@@ -2,7 +2,7 @@ import { Interview } from '@/types/interview';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScoreCircle } from './ScoreCircle';
-import { Calendar, Clock, Building2, Briefcase, CheckCircle, AlertCircle, ArrowLeft, RotateCcw } from 'lucide-react';
+import { Calendar, Clock, Building2, Briefcase, CheckCircle, AlertCircle, ArrowLeft, RotateCcw, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
 
@@ -94,6 +94,39 @@ export function InterviewDetail({ interview }: InterviewDetailProps) {
           </ul>
         </div>
       </div>
+
+      {/* Transcript */}
+      {interview.transcript && (
+        <div className="p-6 bg-card rounded-2xl border border-border/50 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+              <MessageSquare className="w-5 h-5 text-primary" />
+            </div>
+            <h2 className="font-display text-xl font-semibold">Conversation Transcript</h2>
+          </div>
+          <div className="space-y-4 max-h-96 overflow-y-auto">
+            {interview.transcript.split('\n').filter(line => line.trim()).map((line, index) => {
+              const isAI = line.toLowerCase().startsWith('ai:') || line.toLowerCase().startsWith('interviewer:');
+              const isUser = line.toLowerCase().startsWith('you:') || line.toLowerCase().startsWith('user:');
+              
+              return (
+                <div 
+                  key={index} 
+                  className={`p-3 rounded-lg ${
+                    isAI 
+                      ? 'bg-muted/50 border-l-2 border-primary' 
+                      : isUser 
+                        ? 'bg-accent/30 border-l-2 border-accent-foreground/30' 
+                        : 'bg-muted/30'
+                  }`}
+                >
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">{line}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Actions */}
       <div className="flex gap-4">
