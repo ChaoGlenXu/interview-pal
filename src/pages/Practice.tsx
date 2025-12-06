@@ -110,16 +110,15 @@ export default function Practice() {
 
                   <div className="space-y-2">
                     <Label htmlFor="questionCount">Number of Questions</Label>
-                    <Select value={questionCount.toString()} onValueChange={(v) => setQuestionCount(parseInt(v))}>
-                      <SelectTrigger id="questionCount">
-                        <SelectValue placeholder="Select count" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {[3, 5, 7, 10].map((count) => (
-                          <SelectItem key={count} value={count.toString()}>{count} questions</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Input
+                      id="questionCount"
+                      type="number"
+                      min={1}
+                      max={20}
+                      placeholder="e.g., 5"
+                      value={questionCount}
+                      onChange={(e) => setQuestionCount(Math.max(1, Math.min(20, parseInt(e.target.value) || 1)))}
+                    />
                   </div>
                 </div>
 
