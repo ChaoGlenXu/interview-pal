@@ -63,14 +63,14 @@ export default function Practice() {
 
   // Auto-end interview when AI finishes speaking after interview completion
   useEffect(() => {
-    if (interviewComplete && isConnected && aiFinishedSpeaking) {
-      // Wait a bit longer after AI finishes speaking to ensure all audio is played
+    if (interviewComplete && isConnected) {
+      // Give AI 10 seconds to finish speaking before ending the call
       const timer = setTimeout(() => {
         handleDisconnect();
-      }, 2500);
+      }, 10000);
       return () => clearTimeout(timer);
     }
-  }, [interviewComplete, isConnected, aiFinishedSpeaking]);
+  }, [interviewComplete, isConnected]);
 
   return (
     <div className="min-h-screen bg-background">
