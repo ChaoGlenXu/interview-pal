@@ -5,7 +5,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const TADATA_SERVER_URL = "https://brightdata-rkc5.mcp.tadata.com";
+const TADATA_API_KEY = Deno.env.get("TADATA_API_KEY");
+const TADATA_SERVER_URL = `https://brightdata-rkc5.mcp.tadata.com/?tadata-api-key=${TADATA_API_KEY}`;
 
 // Helper to make JSON-RPC calls to MCP server
 async function mcpCall(method: string, params: Record<string, unknown> = {}) {
@@ -22,6 +23,7 @@ async function mcpCall(method: string, params: Record<string, unknown> = {}) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      "Authorization": `Bearer ${TADATA_API_KEY}`,
     },
     body: JSON.stringify(requestBody),
   });
