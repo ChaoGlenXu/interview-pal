@@ -73,9 +73,6 @@ npm install
 npm run dev
 ```
 
-### Environment Variables
-
-The project uses Lovable Cloud for backend services. Environment variables are automatically configured.
 
 ## Project Structure
 
@@ -92,13 +89,7 @@ supabase/
 └── functions/      # Edge functions for AI processing
 ```
 
-## Deployment
 
-Deploy instantly through Lovable:
-
-1. Open your [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID)
-2. Click **Share → Publish**
-3. Your app is live!
 
 ### Custom Domain
 
@@ -118,4 +109,3 @@ This project is proprietary software. All rights reserved.
 
 ---
 
-Built with [Lovable](https://lovable.dev) ✨
